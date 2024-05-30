@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "b2-pisa"
+name = "b2pisa"
 description = "Batch 2 Pseudo Infrastructure for Scalable Applications (PISA)"
 authors = [
 	{ name="Michael Hohenstein", email="michael@hohenste.in" },
@@ -31,7 +31,7 @@ dependencies = [
 dynamic = ["version"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pisa.__version__"}
+version = {attr = "b2pisa.__version__"}
 
 [project.optional-dependencies]
 # TODO: Update???
@@ -53,7 +53,7 @@ dev = [
 "Repository" = "https://github.com/CleoraVoelker/pisa2luigi"
 
 [project.scripts]
-pisa = "pisa.__main__:main"
+b2pisa = "b2pisa.__main__:main"
 
 ########## TODO ???? ##############
 

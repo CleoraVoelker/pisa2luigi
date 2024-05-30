@@ -21,7 +21,7 @@ build: devenv
 clean:
 	rm -rf build/
 	rm -rf dist/
-	rm -rf src/pisa_ssh.egg-info/
+	rm -rf src/b2pisa.egg-info/
 	rm -rf venv/
 	rm -rf `find . -type d -name __pycache__`
 	#cd doc && $(MAKE) clean
@@ -32,8 +32,8 @@ devenv:
 		echo "Creating venv"; \
 		python -m venv venv/; \
 	fi
-	@if ! venv/bin/python -c "import pisa" 2>/dev/null; then \
-		echo "Installing pisa in editable mode"; \
+	@if ! venv/bin/python -c "import b2pisa" 2>/dev/null; then \
+		echo "Installing b2pisa in editable mode"; \
 		. venv/bin/activate; \
 		pip install --upgrade -e .[dev]; \
 	fi
