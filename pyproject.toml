@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pisa-ssh"
-description = "Pseudo Infrastructure for Scalable Applications (PISA)"
+name = "b2-pisa"
+description = "Batch 2 Pseudo Infrastructure for Scalable Applications (PISA)"
 authors = [
 	{ name="Michael Hohenstein", email="michael@hohenste.in" },
 ]
@@ -49,8 +49,8 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/MitchiLaser/pisa/blob/main/docs/README.md" # TODO: Maybe provide github pages build and HTML page
-"Repository" = "https://github.com/MitchiLaser/pisa"
+"Homepage" = "https://github.com/CleoraVoelker/pisa2luigi/blob/main/README.md" # TODO: Maybe provide github pages build and HTML page
+"Repository" = "https://github.com/CleoraVoelker/pisa2luigi"
 
 [project.scripts]
 pisa = "pisa.__main__:main"
