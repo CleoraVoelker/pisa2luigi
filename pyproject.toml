@@ -53,7 +53,7 @@ dev = [
 "Repository" = "https://github.com/CleoraVoelker/pisa2luigi"
 
 [project.scripts]
-b2pisa = "b2pisa.__main__:main"
+b2pisad= "b2pisa.daemon.daemon:start_daemon"
 
 ########## TODO ???? ##############
 

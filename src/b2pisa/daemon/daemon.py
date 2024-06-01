@@ -1,9 +1,20 @@
+import argparse
 import atexit
+import logging as log
 import os
 import socket
 import sys
 import time
-from signal import SIGTERM
+import signal
+import multiprocessing as mp
+
+# import magic: import all necessary modules from the parent directory
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+
+import config
+from dispatcher import dispatcher
+from objects import cluster
 
 
 class Daemon:
@@ -34,11 +45,15 @@ class Daemon:
     The daemon can be stopped, restarted and started again from another program.
     """
 
-    def __init__(self, pidfile, sockfile, stdout=None, stderr=None):
+    def __init__(self, pidfile, sockfile, cluster, stdout=None, stderr=None):
         self.stdout = os.devnull if stdout is None else stdout
         self.stderr = os.devnull if stderr is None else stderr
         self.pidfile = pidfile
         self.sockfile = sockfile
+        self.cluster = cluster
+
+        # set start method for new processes to spawn to avoid issues with fork (which is becoming deprecated)
+        mp.set_start_method('spawn')
 
     def _daemonize(self):
         # Step 1: Fork, exit the parent and continue within the child
@@ -73,15 +88,32 @@ class Daemon:
         with open(self.pidfile, "w+") as pidfile:
             pidfile.write(f"{str(os.getpid())}")
 
-        """
-        # daemonizing done, now configure socket
+    def _setup_socket(self):
         self._cleanup_socket()  # remove potential old socket file
 
         # create a socket to listen on
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.sock.bind(self.sockfile)
-        self.sock.listen(1)
-        """
+        try:
+            os.umask(0o177)  # create socket with rights: srw-------
+            self.sock.bind(self.sockfile)
+        except OSError as e:
+            print(f"Could not bind to socket: {e}", file=sys.stderr)
+            sys.exit(1)
+        finally:
+            os.umask(0)  # reset umask to default value
+        self.sock.listen(config.daemon_listeners)  # maximum of connections
+
+        atexit.register(self._socket_end)  # cleanup socket when daemon is stopped
+
+    def _socket_end(self):  # close socket when daemon is stopped
+        self.sock.close()
+        self._cleanup_socket()
+
+    def _start_dispatcher(self):
+        self.conn_dispatcher = mp.Queue()
+        atexit.register(lambda: self.conn_dispatcher.close())  # close queue when daemon is stopped
+        self.dispatcher = mp.Process(target=dispatcher.dispatcher, args=(self.conn_dispatcher, self.cluster,), daemon=True)  # initialise dispatcher and make sure it gets killed with the daemon
+        self.dispatcher.start()
 
     def _delpid(self):
         if os.path.exists(self.pidfile):
@@ -103,23 +135,28 @@ class Daemon:
         # Check for a pidfile to see if the daemon already runs
         if self._get_pid_from_file():
             print("Daemon is already running.", file=sys.stderr)
-            sys.exit(1)  # evtl. Return Error?
+            sys.exit(1)
+
+        # make sure all cleanup methods are called when the daemon is stopped
+        signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
 
         # Start the daemon
         self._daemonize()
+        self._setup_socket()
+        self._start_dispatcher()
         self.run()
 
-    def stop(self, del_output=True):
+    def stop(self, del_output=False):
         # Get the pid from the pidfile
         pid = self._get_pid_from_file()
         if not pid:
             print("Daemon is not running.", file=sys.stderr)
-            return
+            sys.exit(1)
 
         # kill daemon
         try:
             while True:
-                os.kill(pid, SIGTERM)  # send SIGTERM signal to the daemon
+                os.kill(pid, signal.SIGTERM)  # send SIGTERM signal to the daemon
                 time.sleep(0.1)
         except OSError as e:
             err = str(e)
@@ -140,7 +177,50 @@ class Daemon:
         self.start()
 
     def run(self):
-        """Override this method in your subclass"""
+        """The main loop of the daemon."""
         while True:
-            print("Daemon is running")
-            time.sleep(1)
+            client, address = self.sock.accept()  # blocking call, wait for client to connect
+            # TODO: Continue starting a new process to read from socket and add data to queue
+
+
+def start_daemon():
+    """
+    This function is a necessary entry point for the application. This makes it possible to call the daemon application like an executable.
+    To enable this feature the pyproject.toml file needs to contain a function which can be called by the python interpreter.
+    """
+
+    # set up argument parser
+    parser = argparse.ArgumentParser(
+        prog="b2pisad",
+        description="b2pisa daemon"
+    )
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {config.__version__}")
+    parser.add_argument("-c", "--cluster", help="cluster configuration file")
+    parser.add_argument("-d", "--debug", action="store_true", help="enable debug output")
+    parser.add_argument("-s", "--stop", action="store_true", help="stop the daemon")
+    args = parser.parse_args()
+
+    if args.stop:  # only stop the daemon
+        daemon = Daemon(config.daemon_pidfile, config.daemon_sockfile, None)
+        daemon.stop(del_output=True)
+        sys.exit(0)
+
+    # no stopping of the daemon -> start the daemon
+    log.basicConfig(
+        level=log.DEBUG if args.debug else log.WARNING,
+        # format="%(acsctime)s - %(levelname)s - %(message)s",
+        format='%(asctime)s %(levelname)-8s %(message)s',
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    if hasattr(args, "cluster") and args.cluster is None:
+        log.error("No cluster configuration file set, cannot start daemon")
+        sys.exit(1)
+    cluster_conf = cluster.parse_file(args.cluster)
+
+    # initialise and start the daemon
+    daemon = Daemon(config.daemon_pidfile, config.daemon_sockfile, cluster_conf)
+    daemon.start()
+
+if __name__ == "__main__":
+    start_daemon()
