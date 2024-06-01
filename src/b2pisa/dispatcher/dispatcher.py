@@ -21,7 +21,6 @@ import time
 
 
 def dispatcher(conn: mp.Queue, cluster: cluster.cluster_conf):
-    enum = task.enumerator()  # assign a unique number to every task
     while True:  # TODO: Continue writing here.
         time.sleep(0.1)  # prevent busy waiting
 

@@ -16,6 +16,7 @@ if True:  # prevent autoformatting of the import block
     import config
     from dispatcher import dispatcher
     from objects import cluster
+    from objects import task
 
 
 class Daemon:
@@ -46,7 +47,7 @@ class Daemon:
     The daemon can be stopped, restarted and started again from another program.
     """
 
-    def __init__(self, pidfile, sockfile, cluster, stdout=None, stderr=None):
+    def __init__(self, pidfile: str, sockfile: str, cluster: cluster.cluster_conf, stdout: str = None, stderr: str = None):
         self.stdout = os.devnull if stdout is None else stdout
         self.stderr = os.devnull if stderr is None else stderr
         self.pidfile = pidfile
@@ -132,6 +133,9 @@ class Daemon:
         except IOError:
             return None
 
+    def _receive_task(self):
+        pass  # TODO
+
     def start(self):
         # Check for a pidfile to see if the daemon already runs
         if self._get_pid_from_file():
@@ -145,9 +149,9 @@ class Daemon:
         self._daemonize()
         self._setup_socket()
         self._start_dispatcher()
-        self.run()
+        self._run()
 
-    def stop(self, del_output=False):
+    def stop(self, del_output: bool = False):
         # Get the pid from the pidfile
         pid = self._get_pid_from_file()
         if not pid:
@@ -177,7 +181,7 @@ class Daemon:
         self.stop()
         self.start()
 
-    def run(self):
+    def _run(self):
         """The main loop of the daemon."""
         while True:
             client, address = self.sock.accept()  # blocking call, wait for client to connect
