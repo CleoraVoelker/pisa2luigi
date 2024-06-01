@@ -23,7 +23,7 @@ class cluster_conf:
         if 'all' not in config:
             log.error("Missing 'all' object in cluster configuration")
             sys.exit(1)
-        self.global_param = config['all']  # TODO: Check if the 'num_tasks' is also set -> list of necessary arguments in the config file
+        self.global_param = config['all']  # TODO: Check if the 'num_tasks' is also set -> create list of necessary arguments in the config file
 
         # copy the list of nodes
         if ('devices' not in config) or (len(config['devices']) == 0):

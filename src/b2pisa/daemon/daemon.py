@@ -12,9 +12,10 @@ import multiprocessing as mp
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
-import config
-from dispatcher import dispatcher
-from objects import cluster
+if True:  # prevent autoformatting of the import block
+    import config
+    from dispatcher import dispatcher
+    from objects import cluster
 
 
 class Daemon:
@@ -221,6 +222,7 @@ def start_daemon():
     # initialise and start the daemon
     daemon = Daemon(config.daemon_pidfile, config.daemon_sockfile, cluster_conf)
     daemon.start()
+
 
 if __name__ == "__main__":
     start_daemon()

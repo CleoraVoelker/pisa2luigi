@@ -9,9 +9,10 @@ import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
-from objects import cluster
-# from objects import task
-from ssh import ssh
+if True:  # prevent autoformatting of the import block
+    from objects import cluster
+    from objects import task
+    from ssh import ssh
 
 ## TODO: remove / fix legacy code
 import threading
@@ -20,7 +21,8 @@ import time
 
 
 def dispatcher(conn: mp.Queue, cluster: cluster.cluster_conf):
-    while True:
+    enum = task.enumerator()  # assign a unique number to every task
+    while True:  # TODO: Continue writing here.
         time.sleep(0.1)  # prevent busy waiting
 
 """
