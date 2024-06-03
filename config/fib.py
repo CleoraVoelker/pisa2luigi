@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import argparse
 
 
@@ -10,7 +9,8 @@ def fib(n):
 
 def main():
     parser = argparse.ArgumentParser(description='Calculate the Fibonacci number of a given number')
-    parser.add_argument('-n', '--number', type=int, required=True, help='The number to calculate the Fibonacci number for')
+    parser.add_argument('-n', '--number', type=int, required=True,
+                        help='The number to calculate the Fibonacci number for')
     args = parser.parse_args()
 
     fib_number = fib(args.number)
